@@ -14,8 +14,10 @@
   }
   *{box-sizing:border-box}
   body{
-    margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    color:var(--ink); background:
+    margin:0; 
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    color:var(--ink); 
+    background:
       radial-gradient(900px 600px at 100% -10%, #ffe9f5 0%, transparent 60%),
       radial-gradient(700px 500px at -10% 120%, #f3e9ff 0%, transparent 60%),
       var(--bg);
@@ -23,6 +25,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    font-feature-settings: 'kern' 1, 'liga' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   .login-container{
     max-width: 500px;
@@ -30,38 +35,119 @@
     padding: 20px;
   }
   .card{
-    background:var(--card); border:1px solid var(--stroke); border-radius:16px; padding:24px;
+    background:var(--card); border:1px solid var(--stroke); border-radius:16px; padding:28px;
     box-shadow:0 10px 24px rgba(197,158,255,.12);
+    font-weight: 400;
+    line-height: 1.6;
   }
-  h1{margin:0 0 8px; font-size:28px; text-align:center; color:var(--accent)}
-  .subtitle{text-align:center; color:var(--muted); margin-bottom:24px}
-  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:16px}
+  h1{
+    margin:0 0 12px; 
+    font-size:32px; 
+    font-weight: 600;
+    text-align:center; 
+    color:var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .subtitle{
+    text-align:center; 
+    color:var(--muted); 
+    margin-bottom:28px;
+    font-size: 16px;
+    font-weight: 400;
+  }
+  .row{
+    display:flex; 
+    gap:12px; 
+    flex-wrap:wrap; 
+    align-items:center; 
+    margin-bottom:20px;
+  }
   input[type="text"], input[type="password"]{
-    background:#fff; color:var(--ink); border:1px solid var(--stroke);
-    border-radius:12px; padding:12px 14px; font-size:16px; flex:1; min-width:200px; outline:none;
+    background:#fff; 
+    color:var(--ink); 
+    border:1px solid var(--stroke);
+    border-radius:12px; 
+    padding:14px 16px; 
+    font-size:16px; 
+    font-family: inherit;
+    font-weight: 400;
+    flex:1; 
+    min-width:200px; 
+    outline:none;
+    transition: border-color 0.2s ease;
+  }
+  input[type="text"]:focus, input[type="password"]:focus{
+    border-color: var(--accent);
   }
   button{
-    background:var(--btn); border:1px solid var(--stroke); color:var(--ink);
-    border-radius:12px; padding:12px 16px; font-size:15px; cursor:pointer; transition:.2s transform;
+    background:var(--btn); 
+    border:1px solid var(--stroke); 
+    color:var(--ink);
+    border-radius:12px; 
+    padding:14px 20px; 
+    font-size:15px; 
+    font-family: inherit;
+    font-weight: 500;
+    cursor:pointer; 
+    transition:all 0.2s ease;
   }
-  button:hover{transform:translateY(-1px)}
+  button:hover{
+    transform:translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 141, 199, 0.2);
+  }
   button.primary{
-    background:var(--accent); color:white; border-color:var(--accent);
+    background:var(--accent); 
+    color:white; 
+    border-color:var(--accent);
+    font-weight: 600;
   }
-  .hint{color:var(--muted); font-size:14px; margin-top:8px; padding:12px; background:#fff0f7; border-radius:8px; border-left:3px solid var(--accent2)}
-  .status{margin-top:10px; font-weight:700; text-align:center}
-  .ok{color:var(--good)} .no{color:var(--bad)}
+  .hint{
+    color:var(--muted); 
+    font-size:14px; 
+    margin-top:12px; 
+    padding:16px; 
+    background:#fff0f7; 
+    border-radius:12px; 
+    border-left:4px solid var(--accent2);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+  .status{
+    margin-top:16px; 
+    font-weight:600; 
+    text-align:center;
+    font-size: 16px;
+  }
+  .ok{color:var(--good)} 
+  .no{color:var(--bad)}
   .rebus-card{
-    background:#fff0f7; margin:20px 0; border:2px dashed var(--accent2); border-radius:12px; padding:20px;
+    background:#fff0f7; 
+    margin:24px 0; 
+    border:2px dashed var(--accent2); 
+    border-radius:16px; 
+    padding:24px;
   }
   .rebus-title{
-    margin-top:0; color:var(--accent); font-size:18px; text-align:center;
+    margin-top:0; 
+    color:var(--accent); 
+    font-size:20px; 
+    font-weight: 600;
+    text-align:center;
+    letter-spacing: -0.01em;
   }
   .rebus-content{
-    font-size:18px; line-height:1.8; text-align:center; font-family:ui-monospace;
+    font-size:18px; 
+    line-height:1.8; 
+    text-align:center; 
+    font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+    font-weight: 500;
   }
   .rebus-hint{
-    margin:8px 0; font-size:14px; color:var(--muted); text-align:center;
+    margin:12px 0; 
+    font-size:15px; 
+    color:var(--muted); 
+    text-align:center;
+    font-weight: 400;
   }
 </style>
 </head>
@@ -74,8 +160,8 @@
     <div class="rebus-card">
       <h3 class="rebus-title">🧮 Rebus Matematico</h3>
       <div class="rebus-content">
-        <div><strong>Username:</strong> 2² + 3² + 4² = ?</div>
-        <div class="rebus-hint">Calcola e trova la parola italiana di 5 lettere che rappresenta questo sentimento</div>
+        <div><strong>Username:</strong> (√(64) + 2) - (7 × 1) + (2 ÷ 1) = ?</div>
+        <div class="rebus-hint">Risolvi passo per passo: prima le radici e moltiplicazioni, poi le sottrazioni e divisioni</div>
         <div><strong>Password:</strong> Anno corrente</div>
       </div>
     </div>
@@ -92,7 +178,7 @@
     </form>
     
     <div class="hint" id="hint" style="display:none;">
-      💡 <strong>Indizio:</strong> 2²=4, 3²=9, 4²=16 → 4+9+16=29. Cerca una parola italiana di 5 lettere che rappresenta un sentimento profondo. La password è l'anno in cui stiamo vivendo.
+      💡 <strong>Indizio:</strong> √(64)=8, quindi: (8+2) - (7×1) + (2÷1) = 10 - 7 + 2 = 5. Perfetto! Il risultato è 5. Cerca un nome proprio di 5 lettere che rappresenti questo numero.
     </div>
     <div class="status" id="status"></div>
   </div>
@@ -104,11 +190,12 @@ const norm = s => (s||"").toString().trim().toLowerCase()
   .replaceAll("é","e").replaceAll("è","e").replaceAll("à","a").replaceAll("ò","o").replaceAll("ù","u");
 
 function login(username, password){
-  // Username: 2² + 3² + 4² = 4 + 9 + 16 = 29 → "amore" (love in Italian)
+  // Username: (√(64) + 2) - (7 × 1) + (2 ÷ 1) = (8+2) - 7 + 2 = 10 - 7 + 2 = 5 → "Cilla" (nome proprio)
+  // Il numero 5 può essere associato a "cinque" che foneticamente richiama "Cilla"
   // Password: current year
   const currentYear = new Date().getFullYear().toString();
   
-  if(username === "amore" && password === currentYear){
+  if(username === "cilla" && password === currentYear){
     return true;
   }
   return false;
