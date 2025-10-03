@@ -114,6 +114,7 @@ function updateHeader(){
   $("#doneCount").textContent = Math.min(solved.length,6);
 }
 
+
 function markSolved(n, lastChar){
   if(!solved.includes(n)) solved.push(n);
   const L = (lastChar || "").toLowerCase();
