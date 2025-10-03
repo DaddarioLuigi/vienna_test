@@ -1,0 +1,364 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Escape a tappe • Indizi d’Amore</title>
+<style>
+  :root{
+    /* Palette femminile/pastello */
+    --bg:#fff6fb; --ink:#3a2a35; --muted:#7a6571;
+    --card:#ffffff; --stroke:#f3d4e6;
+    --accent:#ff8dc7; --accent2:#c59eff; --good:#34d399; --bad:#ff6b88;
+    --btn:#ffe3ec;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    color:var(--ink); background:
+      radial-gradient(900px 600px at 100% -10%, #ffe9f5 0%, transparent 60%),
+      radial-gradient(700px 500px at -10% 120%, #f3e9ff 0%, transparent 60%),
+      var(--bg);
+  }
+  header{
+    text-align:center; padding:28px 16px; position:sticky; top:0; z-index:3;
+    background:linear-gradient(180deg, rgba(255,246,251,.9), rgba(255,246,251,.55) 70%, transparent);
+    backdrop-filter:saturate(1.1) blur(6px); border-bottom:1px solid var(--stroke);
+  }
+  h1{margin:0; font-size:clamp(20px,3.5vw,34px)}
+  header p{margin:.35rem 0 0; color:var(--muted)}
+  main{max-width:840px; margin:0 auto; padding:18px}
+  .card{
+    background:var(--card); border:1px solid var(--stroke); border-radius:16px; padding:18px;
+    box-shadow:0 10px 24px rgba(197,158,255,.12);
+  }
+  .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+  input[type="text"], input[type="number"]{
+    background:#fff; color:var(--ink); border:1px solid var(--stroke);
+    border-radius:12px; padding:12px 14px; font-size:16px; min-width:240px; outline:none;
+  }
+  button{
+    background:var(--btn); border:1px solid var(--stroke); color:var(--ink);
+    border-radius:12px; padding:12px 16px; font-size:15px; cursor:pointer; transition:.2s transform;
+  }
+  button:hover{transform:translateY(-1px)}
+  .hint{color:var(--muted); font-size:14px; margin-top:8px}
+  .status{margin-top:10px; font-weight:700}
+  .ok{color:var(--good)} .no{color:var(--bad)}
+  .pill{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border:1px solid var(--stroke);
+    border-radius:999px; font-size:13px; color:var(--muted); background:#fff}
+  .footer{color:var(--muted); font-size:13px; text-align:center; margin-top:10px}
+  .progress{height:8px; background:#ffe3ec; border-radius:99px; overflow:hidden; margin:12px 0 4px}
+  .bar{height:100%; width:0%; background:linear-gradient(90deg, var(--accent), var(--accent2)); transition:width .4s}
+  .kbd{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#fff0f7; padding:2px 6px; border-radius:6px; border:1px solid var(--stroke)}
+  .nav{display:flex; justify-content:space-between; gap:8px; margin-top:10px}
+  .letter-badge{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
+    background:#fff0f7; border:1px dashed var(--accent2); font-size:13px}
+  .grid{display:grid; grid-template-columns:1fr; gap:10px}
+  @media (min-width:700px){ .grid{grid-template-columns:1fr 1fr} }
+
+  /* Confetti canvas */
+  .confetti{position:fixed; inset:0; pointer-events:none; z-index:999}
+</style>
+</head>
+<body>
+<canvas class="confetti" id="confetti"></canvas>
+
+<header>
+  <h1>Indizi d’Amore 🗝️</h1>
+  <p>Ogni pagina ha un enigma. Conserva l’<strong>ultima lettera</strong> della risposta: alla fine ti serviranno tutte.</p>
+</header>
+
+<main>
+  <section class="card">
+    <div class="grid">
+      <div>
+        <div class="pill">📍 Pagina corrente: <span id="pageLabel">–</span></div>
+        <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+        <div class="pill">✅ Risolti: <span id="doneCount">0</span>/6</div>
+      </div>
+      <div class="row" style="justify-content:flex-end">
+        <button id="showHint">Mostra indizio</button>
+        <button id="reset">Reset</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- CONTENUTO DINAMICO -->
+  <section id="content" class="card" style="margin-top:10px"></section>
+
+  <section class="footer">Crea QR che puntano a <span class="kbd">?step=1</span> … <span class="kbd">?step=6</span> e alla fine <span class="kbd">?step=final</span>.</section>
+</main>
+
+<script>
+/* ===========================
+   ROUTER SEMPLICE VIA ?step=
+   =========================== */
+const params = new URLSearchParams(location.search);
+const step = (params.get("step") || "home").toLowerCase();
+
+const stateKey = "escape6_progress_v1";
+const lettersKey = "escape6_letters_v1";
+let solved = JSON.parse(localStorage.getItem(stateKey) || "[]");
+let letters = JSON.parse(localStorage.getItem(lettersKey) || "[]");
+
+const $ = sel => document.querySelector(sel);
+const write = html => $("#content").innerHTML = html;
+const norm = s => (s||"").toString().trim().toLowerCase()
+  .replaceAll("é","e").replaceAll("è","e").replaceAll("à","a").replaceAll("ò","o").replaceAll("ù","u");
+
+function updateHeader(){
+  const label = step === "final" ? "Finale" : (step==="home" ? "Home" : `Enigma ${step}`);
+  $("#pageLabel").textContent = label;
+  $("#bar").style.width = (Math.min(solved.length,6)/6*100) + "%";
+  $("#doneCount").textContent = Math.min(solved.length,6);
+}
+
+function markSolved(n, lastChar){
+  if(!solved.includes(n)) solved.push(n);
+  const L = (lastChar || "").toLowerCase();
+  letters[n-1] = L;
+  localStorage.setItem(stateKey, JSON.stringify(solved));
+  localStorage.setItem(lettersKey, JSON.stringify(letters));
+  updateHeader();
+}
+
+function lastLetterFrom(inputVal){
+  const raw = inputVal.replace(/[^a-zA-Zàèéìòù0-9]/g,"");
+  return raw.slice(-1).toLowerCase();
+}
+
+/* ==============
+   ENIGMI (6)
+   ==============
+   Ordine delle ULTIME LETTERE (mischiate):
+   1→ N (PIN), 2→ V (TV), 3→ A (LUNA), 4→ E (TORTE), 5→ N (LOGIN), 6→ I (LIBRI)
+*/
+const PUZZLES = {
+  1: {
+    title:"Enigma 1 – Sblocco rapido",
+    text:`Per aprire telefono e carte serve spesso un codice numerico a <strong>3 cifre</strong>. Come si chiama (in 3 lettere, inglese)?`,
+    placeholder:"3 lettere",
+    answerList:["pin"],
+    hint:"Non è la password lunga, è il…",
+  },
+  2: {
+    title:"Enigma 2 – Due lettere, mille storie",
+    text:`Mi trovi in salotto e in tasca, trasmetto film e serie. Scrivi l'<em>abbreviazione a due lettere</em>.`,
+    placeholder:"Risposta (2 lettere)",
+    answerList:["tv"],
+    hint:"È l'abbreviazione che vedi nelle guide ai programmi.",
+  },
+  3: {
+    title:"Enigma 3 – Notturno",
+    text:`Di notte illumino, cambio faccia ogni mese. Chi sono? (singolare)`,
+    placeholder:"Una parola",
+    answerList:["luna"],
+    hint:"Sono piena, nuova, crescente…",
+  },
+  4: {
+    title:"Enigma 4 – Dolce conto",
+    text:`Basi di pan di spagna, crema e candeline: al plurale, 5 lettere.`,
+    placeholder:"Una parola di 5 lettere",
+    answerList:["torte"],
+    hint:"Non 'dolci' ma…",
+  },
+  5: {
+    title:"Enigma 5 – Accesso",
+    text:`Per entrare in un sito web, prima di “password” spesso inserisci il tuo… (5 lettere, inglese)`,
+    placeholder:"5 lettere",
+    answerList:["login"],
+    hint:"È la coppia con 'password'.",
+  },
+  6: {
+    title:"Enigma 6 – Letture",
+    text:`Ho 3 romanzi e ne aggiungo 2: quanti <strong>_____</strong> ho in totale? (plurale)`,
+    placeholder:"Una parola, plurale",
+    answerList:["libri"],
+    hint:"Singolare 'libro', plurale…",
+  }
+};
+
+// HOME
+function renderHome(){
+  write(`
+    <h2 style="margin-top:0">Benvenuta 🌸</h2>
+    <p>Questa è una piccola escape a tappe. Ogni enigma ha la sua pagina (<span class="kbd">?step=1</span>…<span class="kbd">6</span>).</p>
+    <ul>
+      <li>Risolvi ogni pagina.</li>
+      <li><strong>Prendi l'ultima lettera</strong> di ogni risposta (verrà anche mostrata). Tienile in ordine!</li>
+      <li>Alla fine, vai alla pagina <span class="kbd">?step=final</span> per usarle tutte insieme.</li>
+    </ul>
+    <div class="row">
+      <a href="?step=1"><button>Vai all’Enigma 1</button></a>
+      <a href="?step=final"><button>Vai al Finale</button></a>
+    </div>
+  `);
+}
+
+// ENIGMA GENERICO
+function renderPuzzle(n){
+  const p = PUZZLES[n];
+  if(!p){ write("<p>Enigma non trovato.</p>"); return; }
+
+  const already = solved.includes(n);
+  const collected = letters[n-1] ? `<span class="letter-badge">🔠 Lettera raccolta: <strong>${letters[n-1].toUpperCase()}</strong></span>` : "";
+
+  write(`
+    <h2 style="margin-top:0">${p.title}</h2>
+    <p>${p.text}</p>
+    <div class="row">
+      <input id="answer" type="text" placeholder="${p.placeholder}" autocomplete="off" />
+      <button id="check">Sblocca</button>
+    </div>
+    <div class="hint" id="hint" hidden>💡 ${p.hint}</div>
+    <div class="status" id="status">${already ? "Già risolto! " : ""}${collected}</div>
+    <div class="nav">
+      <a href="${n>1?`?step=${n-1}`:'#'}"><button ${n>1?"":"disabled"}>← Indietro</button></a>
+      <a href="${n<6?`?step=${n+1}`:'?step=final'}"><button>${n<6?"Avanti →":"Vai al Finale 🎉"}</button></a>
+    </div>
+  `);
+
+  // Enter to submit
+  $("#answer").addEventListener("keydown", e=>{
+    if(e.key==="Enter") $("#check").click();
+  });
+
+  $("#check").addEventListener("click", ()=>{
+    const val = norm($("#answer").value);
+    const ok = p.answerList.map(norm).includes(val);
+    const s = $("#status");
+    if(ok){
+      const L = lastLetterFrom($("#answer").value);
+      markSolved(n, L);
+      s.innerHTML = `<span class="ok">Perfetto!</span> <span class="letter-badge">🔠 Ultima lettera: <strong>${L.toUpperCase()}</strong></span>`;
+    }else{
+      s.innerHTML = `<span class="no">Quasi… riprova!</span>`;
+    }
+  });
+
+  $("#showHint").onclick = ()=> { $("#hint").hidden = false; };
+}
+
+// FINALE (senza mostrare le lettere raccolte)
+function renderFinal(){
+  write(`
+    <h2 style="margin-top:0">Finale – Anagramma segreto</h2>
+    <p>Metti insieme le <strong>ultime lettere</strong> dei 6 enigmi (in ordine 1→6). Con quelle 6 lettere forma una parola corretta.</p>
+    <p class="hint" id="hint" hidden>
+      💡 Indizio anagramma: è una <em>capitale europea</em> di 6 lettere, contiene <strong>due N</strong> ed è famosa per musica e caffè storici.
+    </p>
+    <div class="row">
+      <input id="finalInput" type="text" placeholder="Scrivi la parola (6 lettere)" maxlength="6" />
+      <button id="finalCheck">Svela</button>
+    </div>
+    <div class="status" id="status"></div>
+    <div class="nav">
+      <a href="?step=6"><button>← Torna all’Enigma 6</button></a>
+      <a href="?step=home"><button>Home</button></a>
+      <button id="showHintBtn" style="margin-left:auto">Mostra indizio</button>
+    </div>
+  `);
+
+  $("#showHintBtn").onclick = ()=> { $("#hint").hidden = false; };
+
+  $("#finalInput").addEventListener("keydown", e=>{
+    if(e.key==="Enter") $("#finalCheck").click();
+  });
+
+  $("#finalCheck").addEventListener("click", ()=>{
+    const raw = norm($("#finalInput").value);
+    const s = $("#status");
+    const sorted = x => x.split("").sort().join("");
+    const isSix = raw.length===6;
+    const isAnagram = isSix && sorted(raw)===sorted("vienna");
+
+    if(!isSix){
+      s.innerHTML = `<span class="no">Serve una parola di 6 lettere.</span>`;
+      return;
+    }
+    if(isAnagram && raw!=="vienna"){
+      s.innerHTML = `<span class="no">Ci sei quasi: è un <em>anagramma corretto</em>, ma cerca una <strong>capitale europea</strong> 😉</span>`;
+      return;
+    }
+    if(raw==="vienna"){
+      s.innerHTML = `
+        <span class="ok">🎉 Bravissima!</span>
+        <div class="card" style="margin-top:8px; background:#fff0f7">
+          <p style="margin:.2rem 0">✈️ La destinazione segreta è <strong>VIENNA</strong>! Prepara la valigia… ho organizzato tutto 💖</p>
+        </div>`;
+      fireConfetti(); // animazione coriandoli
+    } else {
+      s.innerHTML = `<span class="no">Mmm… non torna. Ricontrolla le ultime lettere e riprova!</span>`;
+    }
+  });
+}
+
+// RESET & HINT BTN GLOBALI
+$("#reset").addEventListener("click", ()=>{
+  if(confirm("Azzerare progressi e lettere?")){
+    localStorage.removeItem(stateKey);
+    localStorage.removeItem(lettersKey);
+    solved = []; letters = [];
+    updateHeader();
+    location.reload();
+  }
+});
+$("#showHint").addEventListener("click", ()=> {
+  const h = $("#content #hint"); if(h) h.hidden = false;
+});
+
+// Confetti (senza librerie)
+function fireConfetti(){
+  const canvas = document.getElementById("confetti");
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width = innerWidth;
+  const H = canvas.height = innerHeight;
+  const N = 160, parts=[];
+  for(let i=0;i<N;i++){
+    parts.push({
+      x: Math.random()*W,
+      y: Math.random()*(-H),
+      w: 6+Math.random()*6,
+      h: 8+Math.random()*10,
+      vy: 2+Math.random()*3,
+      vx: -1+Math.random()*2,
+      rot: Math.random()*Math.PI,
+      vr: -0.1+Math.random()*0.2,
+      alpha: .8+Math.random()*.2
+    });
+  }
+  let t=0;
+  const timer=setInterval(()=>{
+    ctx.clearRect(0,0,W,H);
+    parts.forEach(p=>{
+      p.y += p.vy; p.x += p.vx; p.rot += p.vr;
+      ctx.save();
+      ctx.globalAlpha = p.alpha;
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      const g = ctx.createLinearGradient(-p.w, -p.h, p.w, p.h);
+      g.addColorStop(0, "#ff8dc7"); // rosa
+      g.addColorStop(1, "#c59eff"); // lilla
+      ctx.fillStyle = g;
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    t++;
+    if(t>220) clearInterval(timer);
+  }, 16);
+}
+
+// ROUTING
+if(step==="home"){ renderHome(); }
+else if(step==="final"){ renderFinal(); }
+else{
+  const n = Number(step);
+  if(Number.isInteger(n) && n>=1 && n<=6){ renderPuzzle(n); }
+  else{ renderHome(); }
+}
+
+updateHeader();
+</script>
+</body>
+</html>
